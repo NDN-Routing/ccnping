@@ -1,1 +1,25 @@
-ccnpingserver and ccnping
+ccnpingserver and ccnping are CCNx applications used for testing connectivity.
+
+ccnpingserver
+====================
+
+Usage: ./ccnpingserver ccnx:/name/prefix
+Starts a ping server that responds to request for Interest name ccnx:/name/prefix/ping/random_number
+ -h - print this message and exit
+ -x - set FreshnessSeconds
+
+
+ccnping
+====================
+
+Usage: ./ccnping ccnx:/name/prefix
+Continously ping a name prefix by sending Interest with name ccnx:/name/prefix/ping/random_number
+ -h - print this message and exit
+ -c - set total number of pings
+ -i - set ping interval in seconds
+
+test connectivity
+====================
+ccnpingserver is usually run on a hub. For example, on Arizona hub, ccnpingserver is started by running
+"ccnpingserver /ndn/arizona.edu". Then we can run "ccnping /ndn/arizona.edu" from other nodes to test
+connectivity towards name prefix /ndn/arizona.edu.
