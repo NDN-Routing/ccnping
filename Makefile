@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -g -Wall -Wpointer-arith -Wreturn-type -Wstrict-prototypes
+CFLAGS = -g -Wall -Wpointer-arith -Wreturn-type -Wstrict-prototypes -fPIC -pie
 LIBS = -lccn -lcrypto
 
 PROGRAMS = ccnping ccnpingserver
