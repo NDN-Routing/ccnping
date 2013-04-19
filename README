@@ -1,8 +1,22 @@
-ccnpingserver and ccnping are CCNx applications used for testing connectivity.
+ccnpingserver and ccnping are CCNx applications used for testing CCN connectivity.
+
+author
+====================
+Cheng Yi (yic@email.arizona.edu)
+Department of Computer Science
+University of Arizona
+
+prerequisite
+====================
+CCNx must be installed.
+
+install
+====================
+make
+sudo make install
 
 ccnpingserver
 ====================
-
 Usage: ./ccnpingserver ccnx:/name/prefix [options]
 Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number.
   [-x freshness] - set FreshnessSeconds
@@ -11,15 +25,14 @@ Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/
 
 ccnping
 ====================
-
 Usage: ./ccnping ccnx:/name/prefix [options]
 Ping a CCN name prefix using Interests with name ccnx:/name/prefix/ping/number.
 The numbers in the Interests are randomly generated unless specified.
   [-i interval] - set ping interval in seconds (minimum 0.1 second)
   [-c count] - set total number of pings
-  [-n number] - set the number to be used in the Interest
-  [-t] - increment the number specified by -n after sending each Interest
+  [-n number] - set the starting number, the number is increamented by 1 after each Interest
   [-h] - print this message and exit
+
 
 test connectivity
 ====================
