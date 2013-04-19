@@ -248,17 +248,21 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
 
 void print_statistics(void)
 {
+    printf("\n--- %s ccnping statistics ---\n", sta.prefix);
+
     if (sta.sent > 0) {
         double lost = (double)(sta.sent - sta.received) * 100 / sta.sent;
         struct timeval now = {0};
         gettimeofday(&now, NULL);
         int time = (double)(now.tv_sec - sta.start.tv_sec) * 1000 +
             (double)(now.tv_usec - sta.start.tv_usec) / 1000;
+
+        printf("%d Interests transmitted, %d Data received, %.1f%% packet loss, time %d ms\n", sta.sent, sta.received, lost, time);
+    }
+
+    if (sta.received > 0) {
         double avg = sta.tsum / sta.received;
         double mdev = sqrt(sta.tsum2 / sta.received - avg * avg);
-
-        printf("\n--- %s ccnping statistics ---\n", sta.prefix);
-        printf("%d Interests transmitted, %d Data received, %.1f%% packet loss, time %d ms\n", sta.sent, sta.received, lost, time);
         printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", sta.min, avg, sta.max, mdev);
     }
 }
@@ -358,7 +362,7 @@ int main(int argc, char *argv[])
 
     res = 0;
 
-    while (res >= 0 && (client.total <= 0 || client.sent < client.total))
+    while (res >= 0 && (client.total <= 0 || client.sent < client.total || hashtb_n(client.ccn_ping_table) > 0))
     {
         if (client.total <= 0 || client.sent < client.total)
             ccn_schedule_run(client.sched);
