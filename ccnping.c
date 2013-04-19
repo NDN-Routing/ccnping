@@ -29,14 +29,16 @@
 #include <ccn/hashtb.h>
 
 #define PING_COMPONENT "ping"
+#define PING_MIN_INTERVAL 0.1
 
 struct ccn_ping_client {
     char *original_prefix;              //name prefix given by command line
     struct ccn_charbuf *prefix;         //name prefix to ping
-    int interval;                       //interval between pings in seconds
+    double interval;                    //interval between pings in seconds
     int sent;                           //number of interest sent
     int received;                       //number of content or timeout received
     int total;                          //total number of pings to send
+    long int number;                    //the number used in ping Interest name, number < 0 means random
     struct ccn *h;
     struct ccn_schedule *sched;
     struct ccn_scheduled_event *event;
@@ -45,7 +47,7 @@ struct ccn_ping_client {
 };
 
 struct ccn_ping_entry {
-    long int random_number;
+    long int number;
     struct timeval send_time;
 };
 
@@ -60,19 +62,21 @@ static void ccn_ping_gettime(const struct ccn_gettime *self, struct ccn_timeval 
 static struct ccn_gettime ccn_ping_ticker = {
     "timer",
     &ccn_ping_gettime,
-    1000000,
+    10000,
     NULL
 };
 
 static void usage(const char *progname)
 {
     fprintf(stderr,
-            "Usage: %s ccnx:/name/prefix\n"
-            "Continously ping a name prefix by sending Interest with name ccnx:/name/prefix/ping/random_number\n"
-            " -h - print this message and exit\n"
-            " -c - set total number of pings\n"
-            " -i - set ping interval in seconds\n",
-            progname);
+            "Usage: %s ccnx:/name/prefix [options]\n"
+            "Ping a CCN name prefix using Interests with name ccnx:/name/prefix/ping/number.\n"
+            "The numbers in the Interests are randomly generated unless specified.\n"
+            "  [-i interval] - set ping interval in seconds (minimum %.2f second)\n"
+            "  [-c count] - set total number of pings\n"
+            "  [-n number] - set the starting number, the number is increamented by 1 after each Interest\n"
+            "  [-h] - print this message and exit\n",
+            progname, PING_MIN_INTERVAL);
     exit(1);
 }
 
@@ -116,7 +120,7 @@ static void remove_ccn_ping_entry(struct ccn_ping_client *client,
 }
 
 static void add_ccn_ping_entry(struct ccn_ping_client *client,
-        struct ccn_charbuf *name, long int random_number)
+        struct ccn_charbuf *name, long int number)
 {
     struct hashtb_enumerator ee;
     struct hashtb_enumerator *e = &ee;
@@ -129,7 +133,7 @@ static void add_ccn_ping_entry(struct ccn_ping_client *client,
     assert(res == HT_NEW_ENTRY);
 
     entry = e->data;
-    entry->random_number = random_number;
+    entry->number = number;
     gettimeofday(&entry->send_time, NULL);
 
     hashtb_end(e);
@@ -157,8 +161,8 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
 
             rtt = (double)(now.tv_sec - entry->send_time.tv_sec) * 1000 +
                 (double)(now.tv_usec - entry->send_time.tv_usec) / 1000;
-            printf("content from %s: random_number = %ld \trtt = %.3fms\n", client->original_prefix,
-                    entry->random_number, rtt);
+            printf("content from %s: number = %ld %2s\trtt = %.3fms\n", client->original_prefix,
+                    entry->number, "", rtt);
 
             remove_ccn_ping_entry(client, info->interest_ccnb, info->pi);
 
@@ -169,7 +173,7 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
             entry = get_ccn_ping_entry(client,
                     info->interest_ccnb, info->pi);
 
-            printf("timeout from %s: random_number = %ld\n", client->original_prefix, entry->random_number);
+            printf("timeout from %s: number = %ld\n", client->original_prefix, entry->number);
 
             remove_ccn_ping_entry(client, info->interest_ccnb, info->pi);
 
@@ -186,13 +190,21 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
         struct ccn_scheduled_event *ev, int flags)
 {
     struct ccn_ping_client *client = clienth;
+    if (client->total >= 0 && client->sent >= client->total)
+        return 0;
+
     struct ccn_charbuf *name = ccn_charbuf_create();
     long int rnum;
     char rnumstr[20];
     int res;
 
     ccn_charbuf_append(name, client->prefix->buf, client->prefix->length);
-    rnum = random();
+    if (client->number < 0)
+        rnum = random();
+    else {
+        rnum = client->number;
+        client->number ++;
+    }
     memset(&rnumstr, 0, 20);
     sprintf(rnumstr, "%ld", rnum);
     ccn_name_append_str(name, rnumstr);
@@ -212,14 +224,12 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
 int main(int argc, char *argv[])
 {
     const char *progname = argv[0];
-    struct ccn_ping_client client = {.sent = 0, .received = 0, .total = -1, .interval = 1};
+    struct ccn_ping_client client = {.sent = 0, .received = 0, .total = -1, .number = -1, .interval = 1};
     struct ccn_closure in_content = {.p = &incoming_content};
     struct hashtb_param param = {0};
     int res;
 
-    srandom(time(NULL));
-
-    while ((res = getopt(argc, argv, "hi:c:")) != -1) {
+    while ((res = getopt(argc, argv, "hi:c:n:")) != -1) {
         switch (res) {
             case 'c':
                 client.total = atol(optarg);
@@ -227,8 +237,13 @@ int main(int argc, char *argv[])
                     usage(progname);
                 break;
             case 'i':
-                client.interval = atol(optarg);
-                if (client.interval <= 0)
+                client.interval = atof(optarg);
+                if (client.interval < PING_MIN_INTERVAL)
+                    usage(progname);
+                break;
+            case 'n':
+                client.number = atol(optarg);
+                if (client.number < 0)
                     usage(progname);
                 break;
             case 'h':
@@ -237,6 +252,9 @@ int main(int argc, char *argv[])
                 break;
         }
     }
+
+    if (client.number < 0)
+        srandom(time(NULL));
 
     argc -= optind;
     argv += optind;
@@ -280,11 +298,11 @@ int main(int argc, char *argv[])
 
     res = 0;
 
-    while (res >= 0 && (client.total <= 0 || client.received < client.total))
+    while (res >= 0 && (client.total <= 0 || client.sent < client.total))
     {
         if (client.total <= 0 || client.sent < client.total)
             ccn_schedule_run(client.sched);
-        res = ccn_run(client.h, 500);
+        res = ccn_run(client.h, 10);
     }
 
     ccn_schedule_destroy(&client.sched);
