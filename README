@@ -3,23 +3,26 @@ ccnpingserver and ccnping are CCNx applications used for testing connectivity.
 ccnpingserver
 ====================
 
-Usage: ./ccnpingserver ccnx:/name/prefix
-Starts a ping server that responds to request for Interest name ccnx:/name/prefix/ping/random_number
- -h - print this message and exit
- -x - set FreshnessSeconds
-
+Usage: ./ccnpingserver ccnx:/name/prefix [options]
+Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number.
+  [-x freshness] - set FreshnessSeconds
+  [-d] - run server in daemon mode
+  [-h] - print this message and exit
 
 ccnping
 ====================
 
-Usage: ./ccnping ccnx:/name/prefix
-Continously ping a name prefix by sending Interest with name ccnx:/name/prefix/ping/random_number
- -h - print this message and exit
- -c - set total number of pings
- -i - set ping interval in seconds
+Usage: ./ccnping ccnx:/name/prefix [options]
+Ping a CCN name prefix using Interests with name ccnx:/name/prefix/ping/number.
+The numbers in the Interests are randomly generated unless specified.
+  [-i interval] - set ping interval in seconds (minimum 0.1 second)
+  [-c count] - set total number of pings
+  [-n number] - set the number to be used in the Interest
+  [-t] - increment the number specified by -n after sending each Interest
+  [-h] - print this message and exit
 
 test connectivity
 ====================
-ccnpingserver is usually run on a hub. For example, on Arizona hub, ccnpingserver is started by running
-"ccnpingserver /ndn/arizona.edu". Then we can run "ccnping /ndn/arizona.edu" from other nodes to test
-connectivity towards name prefix /ndn/arizona.edu.
+ccnpingserver is usually run on a hub which announces its own name prefix. For example, on the
+Arizona hub, ccnpingserver is started by running "ccnpingserver /ndn/arizona.edu". Then other
+nodes can run "ccnping /ndn/arizona.edu" to test the connectivity towards /ndn/arizona.edu.
