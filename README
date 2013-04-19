@@ -36,6 +36,4 @@ The numbers in the Interests are randomly generated unless specified.
 
 test connectivity
 ====================
-ccnpingserver is usually run on a hub which announces its own name prefix. For example, on the
-Arizona hub, ccnpingserver is started by running "ccnpingserver /ndn/arizona.edu". Then other
-nodes can run "ccnping /ndn/arizona.edu" to test the connectivity towards /ndn/arizona.edu.
+ccnpingserver is usually run on a hub which announces its own name prefix. For example, on the Arizona hub, ccnpingserver is started by running "ccnpingserver /ndn/arizona.edu". Then other nodes can run "ccnping /ndn/arizona.edu" to test the connectivity towards /ndn/arizona.edu.
