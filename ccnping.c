@@ -23,6 +23,9 @@
 #include <string.h>
 #include <assert.h>
 #include <sys/time.h>
+#include <signal.h>
+#include <limits.h>
+#include <math.h>
 #include <ccn/ccn.h>
 #include <ccn/uri.h>
 #include <ccn/schedule.h>
@@ -50,6 +53,20 @@ struct ccn_ping_entry {
     long int number;
     struct timeval send_time;
 };
+
+struct ccn_ping_statistics {
+    char *prefix;
+    int sent;
+    int received;
+    struct timeval start;
+    double min;
+    double max;
+    double tsum;
+    double tsum2;
+};
+
+struct sigaction osa;
+struct ccn_ping_statistics sta;
 
 static void ccn_ping_gettime(const struct ccn_gettime *self, struct ccn_timeval *result)
 {
@@ -155,21 +172,28 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
             break;
         case CCN_UPCALL_CONTENT:
             client->received ++;
+            sta.received ++;
 
             entry = get_ccn_ping_entry(client,
                     info->interest_ccnb, info->pi);
 
             rtt = (double)(now.tv_sec - entry->send_time.tv_sec) * 1000 +
                 (double)(now.tv_usec - entry->send_time.tv_usec) / 1000;
-            printf("content from %s: number = %ld %2s\trtt = %.3fms\n", client->original_prefix,
+
+            if (rtt < sta.min)
+                sta.min = rtt;
+            if (rtt > sta.max)
+                sta.max = rtt;
+            sta.tsum += rtt;
+            sta.tsum2 += rtt * rtt;
+
+            printf("content from %s: number = %ld %2s\trtt = %.3f ms\n", client->original_prefix,
                     entry->number, "", rtt);
 
             remove_ccn_ping_entry(client, info->interest_ccnb, info->pi);
 
             break;
         case CCN_UPCALL_INTEREST_TIMED_OUT:
-            client->received ++;
-
             entry = get_ccn_ping_entry(client,
                     info->interest_ccnb, info->pi);
 
@@ -212,6 +236,7 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
     res = ccn_express_interest(client->h, name, client->closure, NULL);
     add_ccn_ping_entry(client, name, rnum);
     client->sent ++;
+    sta.sent ++;
 
     ccn_charbuf_destroy(&name);
 
@@ -221,6 +246,30 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
         return 0;
 }
 
+void print_statistics(void)
+{
+    if (sta.sent > 0) {
+        double lost = (double)(sta.sent - sta.received) * 100 / sta.sent;
+        struct timeval now = {0};
+        gettimeofday(&now, NULL);
+        int time = (double)(now.tv_sec - sta.start.tv_sec) * 1000 +
+            (double)(now.tv_usec - sta.start.tv_usec) / 1000;
+        double avg = sta.tsum / sta.received;
+        double mdev = sqrt(sta.tsum2 / sta.received - avg * avg);
+
+        printf("\n--- %s ccnping statistics ---\n", sta.prefix);
+        printf("%d Interests transmitted, %d Data received, %.1f%% packet loss, time %d ms\n", sta.sent, sta.received, lost, time);
+        printf("rtt min/avg/max/mdev = %.3f/%.3f/%.3f/%.3f ms\n", sta.min, avg, sta.max, mdev);
+    }
+}
+
+void handle_interrupt(int sig_no)
+{
+    print_statistics();
+    sigaction(SIGINT, &osa, NULL);
+    kill(0, SIGINT);
+}
+
 int main(int argc, char *argv[])
 {
     const char *progname = argv[0];
@@ -228,6 +277,15 @@ int main(int argc, char *argv[])
     struct ccn_closure in_content = {.p = &incoming_content};
     struct hashtb_param param = {0};
     int res;
+
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = &handle_interrupt;
+    sigaction(SIGINT, &sa, &osa);
+
+    memset(&sta, 0, sizeof(sta));
+    gettimeofday(&sta.start, 0);
+    sta.min = INT_MAX;
 
     while ((res = getopt(argc, argv, "hi:c:n:")) != -1) {
         switch (res) {
@@ -261,6 +319,8 @@ int main(int argc, char *argv[])
 
     if (argv[0] == NULL)
         usage(progname);
+
+    sta.prefix = argv[0];
 
     client.original_prefix = argv[0];
     client.prefix = ccn_charbuf_create();
@@ -308,6 +368,8 @@ int main(int argc, char *argv[])
     ccn_schedule_destroy(&client.sched);
     ccn_destroy(&client.h);
     ccn_charbuf_destroy(&client.prefix);
+
+    print_statistics();
 
     return 0;
 }

@@ -1,6 +1,6 @@
 CC = cc
 CFLAGS = -g -Wall -Wpointer-arith -Wreturn-type -Wstrict-prototypes -fPIC -pie
-LIBS = -lccn -lcrypto
+LIBS = -lm -lccn -lcrypto
 
 PROGRAMS = ccnping ccnpingserver
 
