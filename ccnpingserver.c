@@ -1,21 +1,24 @@
-/**
- * @file ccnpingserver.c
+/*
+ * ccnpingserver responds to ping Interests with empty Data.
+ * Copyright (C) 2011 University of Arizona
  *
- * Start a CCN ping server that responds to CCN ping requests.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * A CCNx command-line utility.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * This work is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License version 2 as published by the
- * Free Software Foundation.
- * This work is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * for more details. You should have received a copy of the GNU General Public
- * License along with this program; if not, write to the
- * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
- * Boston, MA 02110-1301, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ *
+ * Author: Cheng Yi <yic@email.arizona.edu>
  */
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,7 +87,7 @@ static void usage(const char *progname)
 
 //check whether Interest name is valid
 //prefix is ccnx:/name/prefix/ping
-//Interest name should be ccnx:/name/prefix/ping/random_number
+//Interest name should be ccnx:/name/prefix/ping/number
 //returns 1 if Interest name is valid, 0 otherwise
 int ping_interest_valid(struct ccn_charbuf *prefix,
         const unsigned char *interest_msg, const struct ccn_parsed_interest *pi)
@@ -143,7 +146,7 @@ enum ccn_upcall_res incoming_interest(struct ccn_closure *selfp,
         case CCN_UPCALL_FINAL:
             break;
         case CCN_UPCALL_INTEREST:
-            //check Interest name (ccnx:/name/prefix/ping/random_number)
+            //check Interest name (ccnx:/name/prefix/ping/number)
             if (ping_interest_valid(server->prefix, info->interest_ccnb, info->pi)) {
                 //construct Data content with given Interest name
                 struct ccn_charbuf *data = ccn_charbuf_create();
