@@ -74,10 +74,10 @@ static void usage(const char *progname)
 {
     fprintf(stderr,
             "Usage: %s ccnx:/name/prefix [options]\n"
-            "Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number\n"
-            " -x - set FreshnessSeconds\n"
-            " -d - run server in daemon mode\n"
-            " -h - print this message and exit\n",
+            "Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number.\n"
+            "  [-x freshness] - set FreshnessSeconds\n"
+            "  [-d] - run server in daemon mode\n"
+            "  [-h] - print this message and exit\n",
             progname);
     exit(1);
 }
