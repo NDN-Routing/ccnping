@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <ccn/ccn.h>
 #include <ccn/uri.h>
 #include <ccn/keystore.h>
@@ -35,13 +36,48 @@ struct ccn_ping_server {
     int expire;
 };
 
+static void daemonize(void)
+{
+    pid_t pid;
+    pid = fork();
+
+    /* In case of fork is error. */
+    if (pid < 0) {
+        fprintf(stderr, "fork failed: %d", errno);
+        exit(-1);
+    }
+
+    /* In case of this is parent process. */
+    if (pid != 0)
+        exit(0);
+
+    /* Become session leader and get pid. */
+    pid = setsid();
+
+    if (pid == -1) {
+        fprintf(stderr, "setsid failed: %d", errno);
+        exit(-1);
+    }
+
+    /* Change directory to root. */
+    chdir("/");
+
+    /* File descriptor close. */
+    freopen("/dev/null", "r", stdin);
+    freopen("/dev/null", "w", stdout);
+    freopen("/dev/null", "w", stderr);
+
+    umask(0027);
+}
+
 static void usage(const char *progname)
 {
     fprintf(stderr,
-            "Usage: %s ccnx:/name/prefix\n"
-            "Starts a ping server that responds to request for Interest name ccnx:/name/prefix/ping/random_number\n"
-            " -h - print this message and exit\n"
-            " -x - set FreshnessSeconds\n",
+            "Usage: %s ccnx:/name/prefix [options]\n"
+            "Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number\n"
+            " -x - set FreshnessSeconds\n"
+            " -d - run server in daemon mode\n"
+            " -h - print this message and exit\n",
             progname);
     exit(1);
 }
@@ -137,13 +173,17 @@ int main(int argc, char **argv)
     struct ccn_ping_server server = {.count = 0, .expire = 1};
     struct ccn_closure in_interest = {.p = &incoming_interest};
     int res;
+    int daemon_mode = 0;
 
-    while ((res = getopt(argc, argv, "hx:")) != -1) {
+    while ((res = getopt(argc, argv, "hdx:")) != -1) {
         switch (res) {
             case 'x':
                 server.expire = atol(optarg);
                 if (server.expire <= 0)
                     usage(progname);
+                break;
+            case 'd':
+                daemon_mode = 1;
                 break;
             case 'h':
             default:
@@ -187,6 +227,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to register interest (res == %d)\n", res);
         exit(1);
     }
+
+    if (daemon_mode)
+        daemonize();
 
     res = ccn_run(ccn, -1);
 
