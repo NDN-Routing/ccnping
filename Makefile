@@ -19,4 +19,7 @@ clean:
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
+install:
+	cp $(PROGRAMS) /usr/local/bin
+
 .PHONY: all clean
