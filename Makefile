@@ -4,6 +4,9 @@ LIBS = -lm -lccn -lcrypto
 
 PROGRAMS = ccnping ccnpingserver
 
+PREFIX=/usr/local
+DESTDIR=
+
 all: $(PROGRAMS)
 
 ccnping: ccnping.o
@@ -20,6 +23,7 @@ clean:
 	$(CC) $(CFLAGS) -c $<
 
 install:
-	cp $(PROGRAMS) /usr/local/bin
+	mkdir -p ${DESTDIR}${PREFIX}/bin
+	cp $(PROGRAMS) ${DESTDIR}${PREFIX}/bin
 
 .PHONY: all clean
