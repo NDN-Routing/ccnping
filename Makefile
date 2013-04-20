@@ -23,6 +23,7 @@ clean:
 	$(CC) $(CFLAGS) -c $<
 
 install:
+	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp $(PROGRAMS) ${DESTDIR}${PREFIX}/bin
 
 .PHONY: all clean
