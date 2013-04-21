@@ -1,22 +1,29 @@
-ccnpingserver and ccnping are CCNx applications used for testing CCN connectivity.
+ccnping and ccnpingserver are CCNx applications for testing CCN connectivity.
 
-author
-====================
+Author
+========================================
 Cheng Yi <yic@email.arizona.edu>
 Department of Computer Science
 University of Arizona
 
-prerequisite
-====================
+Prerequisite
+========================================
 CCNx must be installed.
 
-install
-====================
+Installation
+========================================
+Default installation:
+./configure
 make
 sudo make install
 
+To install in a different path, run
+./configure --prefix=/different/path
+If CCNx is not installed in the default path, run
+./configure LDFLAGS=-L/CCNx/path/lib CFLAGS=-I/CCNx/path/include
+
 ccnpingserver
-====================
+========================================
 Usage: ./ccnpingserver ccnx:/name/prefix [options]
 Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number.
   [-x freshness] - set FreshnessSeconds
@@ -24,7 +31,7 @@ Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/
   [-h] - print this message and exit
 
 ccnping
-====================
+========================================
 Usage: ./ccnping ccnx:/name/prefix [options]
 Ping a CCN name prefix using Interests with name ccnx:/name/prefix/ping/number.
 The numbers in the Interests are randomly generated unless specified.
@@ -34,6 +41,6 @@ The numbers in the Interests are randomly generated unless specified.
   [-h] - print this message and exit
 
 
-test connectivity
-====================
+Test connectivity
+========================================
 ccnpingserver is usually run on a hub which announces its own name prefix. For example, on the Arizona hub, ccnpingserver is started by running "ccnpingserver /ndn/arizona.edu". Then other nodes can run "ccnping /ndn/arizona.edu" to test the connectivity towards /ndn/arizona.edu.
