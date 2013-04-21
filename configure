@@ -4302,7 +4302,7 @@ fi
 done
 
 
-for ac_header in limits.h stdlib.h string.h sys/time.h unistd.h ccn/ccn.h ccn/uri.h ccn/schedule.h ccn/hashtb.h
+for ac_header in limits.h stdlib.h string.h sys/time.h unistd.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -4312,7 +4312,22 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 _ACEOF
 
 else
-  as_fn_error $? "header not found." "$LINENO" 5
+  as_fn_error $? "header file not found." "$LINENO" 5
+fi
+
+done
+
+for ac_header in ccn/ccn.h ccn/uri.h ccn/schedule.h ccn/hashtb.h
+do :
+  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  as_fn_error $? "ccn header files not found." "$LINENO" 5
 fi
 
 done

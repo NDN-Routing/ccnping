@@ -20,7 +20,8 @@ AC_CHECK_LIB([crypto], [main], [], [AC_MSG_ERROR([library crypto not found.])])
 AC_CHECK_LIB([ccn], [main], [], [AC_MSG_ERROR([library ccn not found.])])
 
 # Checks for header files.
-AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h unistd.h ccn/ccn.h ccn/uri.h ccn/schedule.h ccn/hashtb.h], [], [AC_MSG_ERROR([header not found.])])
+AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h unistd.h], [], [AC_MSG_ERROR([header file not found.])])
+AC_CHECK_HEADERS([ccn/ccn.h ccn/uri.h ccn/schedule.h ccn/hashtb.h], [], [AC_MSG_ERROR([ccn header files not found.])])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_PID_T
 
