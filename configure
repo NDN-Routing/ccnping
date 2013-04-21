@@ -3776,15 +3776,15 @@ fi
 
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lccn':
+# FIXME: Replace `main' with a function in `-lm':
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lccn" >&5
-$as_echo_n "checking for main in -lccn... " >&6; }
-if test "${ac_cv_lib_ccn_main+set}" = set; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lm" >&5
+$as_echo_n "checking for main in -lm... " >&6; }
+if test "${ac_cv_lib_m_main+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lccn  $LIBS"
+LIBS="-lm  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3798,25 +3798,25 @@ return main ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_ccn_main=yes
+  ac_cv_lib_m_main=yes
 else
-  ac_cv_lib_ccn_main=no
+  ac_cv_lib_m_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ccn_main" >&5
-$as_echo "$ac_cv_lib_ccn_main" >&6; }
-if test "x$ac_cv_lib_ccn_main" = x""yes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_m_main" >&5
+$as_echo "$ac_cv_lib_m_main" >&6; }
+if test "x$ac_cv_lib_m_main" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBCCN 1
+#define HAVE_LIBM 1
 _ACEOF
 
-  LIBS="-lccn $LIBS"
+  LIBS="-lm $LIBS"
 
 else
-  as_fn_error $? "Library ccn not found." "$LINENO" 5
+  as_fn_error $? "Library math not found." "$LINENO" 5
 fi
 
 # FIXME: Replace `main' with a function in `-lcrypto':
@@ -3861,14 +3861,14 @@ else
   as_fn_error $? "Library crypto not found." "$LINENO" 5
 fi
 
-# FIXME: Replace `main' with a function in `-lm':
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lm" >&5
-$as_echo_n "checking for main in -lm... " >&6; }
-if test "${ac_cv_lib_m_main+set}" = set; then :
+# FIXME: Replace `main' with a function in `-lccn':
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lccn" >&5
+$as_echo_n "checking for main in -lccn... " >&6; }
+if test "${ac_cv_lib_ccn_main+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lm  $LIBS"
+LIBS="-lccn  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -3882,25 +3882,25 @@ return main ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_m_main=yes
+  ac_cv_lib_ccn_main=yes
 else
-  ac_cv_lib_m_main=no
+  ac_cv_lib_ccn_main=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_m_main" >&5
-$as_echo "$ac_cv_lib_m_main" >&6; }
-if test "x$ac_cv_lib_m_main" = x""yes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_ccn_main" >&5
+$as_echo "$ac_cv_lib_ccn_main" >&6; }
+if test "x$ac_cv_lib_ccn_main" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBM 1
+#define HAVE_LIBCCN 1
 _ACEOF
 
-  LIBS="-lm $LIBS"
+  LIBS="-lccn $LIBS"
 
 else
-  as_fn_error $? "Library math not found." "$LINENO" 5
+  as_fn_error $? "Library ccn not found." "$LINENO" 5
 fi
 
 
