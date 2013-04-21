@@ -63,12 +63,14 @@ static void daemonize(void)
     }
 
     /* Change directory to root. */
-    chdir("/");
+    if (chdir("/") < 0)
+        exit(-1);
 
     /* File descriptor close. */
-    freopen("/dev/null", "r", stdin);
-    freopen("/dev/null", "w", stdout);
-    freopen("/dev/null", "w", stderr);
+    if (!freopen("/dev/null", "r", stdin) ||
+        !freopen("/dev/null", "w", stdout) ||
+        !freopen("/dev/null", "w", stderr))
+        exit(-1);
 
     umask(0027);
 }
