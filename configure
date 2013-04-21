@@ -3816,7 +3816,7 @@ _ACEOF
   LIBS="-lm $LIBS"
 
 else
-  as_fn_error $? "Library math not found." "$LINENO" 5
+  as_fn_error $? "library math not found." "$LINENO" 5
 fi
 
 # FIXME: Replace `main' with a function in `-lcrypto':
@@ -3858,7 +3858,7 @@ _ACEOF
   LIBS="-lcrypto $LIBS"
 
 else
-  as_fn_error $? "Library crypto not found." "$LINENO" 5
+  as_fn_error $? "library crypto not found." "$LINENO" 5
 fi
 
 # FIXME: Replace `main' with a function in `-lccn':
@@ -3900,7 +3900,7 @@ _ACEOF
   LIBS="-lccn $LIBS"
 
 else
-  as_fn_error $? "Library ccn not found." "$LINENO" 5
+  as_fn_error $? "library ccn not found." "$LINENO" 5
 fi
 
 
@@ -4311,6 +4311,8 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
+else
+  as_fn_error $? "header not found." "$LINENO" 5
 fi
 
 done
