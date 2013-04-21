@@ -4,7 +4,6 @@ ccnpingserver
 tags
 aclocal.m4
 autom4te.cache/
-build-aux/
 .deps/
 config.log
 config.status
