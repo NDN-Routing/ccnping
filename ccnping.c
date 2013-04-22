@@ -82,7 +82,7 @@ static void ccn_ping_gettime(const struct ccn_gettime *self, struct ccn_timeval 
 static struct ccn_gettime ccn_ping_ticker = {
     "timer",
     &ccn_ping_gettime,
-    10000,
+    1000000,
     NULL
 };
 
