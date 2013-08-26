@@ -247,11 +247,11 @@ struct ccn_charbuf *make_template(int allow_caching) {
         struct ccn_charbuf *templ = ccn_charbuf_create();
         ccn_charbuf_append_tt(templ, CCN_DTAG_Interest, CCN_DTAG);
         ccn_charbuf_append_tt(templ, CCN_DTAG_Name, CCN_DTAG);
-        ccn_charbuf_append_closer(templ); /* </Name> */
+        ccn_charbuf_append_closer(templ); // </Name>
         ccn_charbuf_append_tt(templ, CCN_DTAG_AnswerOriginKind, CCN_DTAG);
         ccnb_append_number(templ, CCN_AOK_NEW);
-        ccn_charbuf_append_closer(templ); /* </AnswerOriginKind> */
-        ccn_charbuf_append_closer(templ); /* </Interest> */
+        ccn_charbuf_append_closer(templ); // </AnswerOriginKind>
+        ccn_charbuf_append_closer(templ); // </Interest>
         return(templ);
     }
 

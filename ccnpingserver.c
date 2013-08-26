@@ -23,8 +23,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/stat.h>
+#include <unistd.h>
+
 #include <ccn/ccn.h>
 #include <ccn/uri.h>
 #include <ccn/keystore.h>
@@ -44,17 +45,17 @@ static void daemonize(void)
     pid_t pid;
     pid = fork();
 
-    /* In case of fork is error. */
+    // In case of fork is error.
     if (pid < 0) {
         fprintf(stderr, "fork failed: %d", errno);
         exit(-1);
     }
 
-    /* In case of this is parent process. */
+    // In case of this is parent process.
     if (pid != 0)
         exit(0);
 
-    /* Become session leader and get pid. */
+    // Become session leader and get pid.
     pid = setsid();
 
     if (pid == -1) {
@@ -62,11 +63,11 @@ static void daemonize(void)
         exit(-1);
     }
 
-    /* Change directory to root. */
+    // Change directory to root.
     if (chdir("/") < 0)
         exit(-1);
 
-    /* File descriptor close. */
+    // File descriptor close.
     if (!freopen("/dev/null", "r", stdin) ||
         !freopen("/dev/null", "w", stdout) ||
         !freopen("/dev/null", "w", stderr))
@@ -79,7 +80,8 @@ static void usage(const char *progname)
 {
     fprintf(stderr,
             "Usage: %s ccnx:/name/prefix [options]\n"
-            "Starts a CCN ping server that responds to Interests with name ccnx:/name/prefix/ping/number.\n"
+            "Starts a CCN ping server that responds to Interests with name"
+            " ccnx:/name/prefix/ping/number.\n"
             "  [-x freshness] - set FreshnessSeconds\n"
             "  [-d] - run server in daemon mode\n"
             "  [-h] - print this message and exit\n",
@@ -87,10 +89,11 @@ static void usage(const char *progname)
     exit(1);
 }
 
-//check whether Interest name is valid
-//prefix is ccnx:/name/prefix/ping
-//Interest name should be ccnx:/name/prefix/ping/number or ccnx:/name/prefix/ping/identifier/number
-//returns 1 if Interest name is valid, 0 otherwise
+// Checks whether Interest name is valid.
+// - prefix is ccnx:/name/prefix/ping.
+// - Interest name should be ccnx:/name/prefix/ping/number or
+//   ccnx:/name/prefix/ping/identifier/number.
+// - returns 1 if Interest name is valid, 0 otherwise.
 int ping_interest_valid(struct ccn_charbuf *prefix,
         const unsigned char *interest_msg, const struct ccn_parsed_interest *pi)
 {
@@ -104,7 +107,8 @@ int ping_interest_valid(struct ccn_charbuf *prefix,
     ccn_indexbuf_destroy(&prefix_components);
 
     if (pi->prefix_comps == prefix_ncomps + 1 || pi->prefix_comps == prefix_ncomps + 2) {
-        number = strtol((char *)interest_msg + pi->offset[CCN_PI_B_LastPrefixComponent] + 2, &end, 10);
+        number = strtol((char *)interest_msg + pi->offset[CCN_PI_B_LastPrefixComponent] + 2,
+                &end, 10);
         if (*end == '\0' && number >= 0)
             return 1;
     }
@@ -122,7 +126,7 @@ int construct_ping_response(struct ccn *h, struct ccn_charbuf *data,
     ccn_charbuf_append(name, interest_msg + pi->offset[CCN_PI_B_Name],
             pi->offset[CCN_PI_E_Name] - pi->offset[CCN_PI_B_Name]);
 
-    //set freshness seconds
+    // Set freshness seconds.
     if (expire >= 0) {
         sp.template_ccnb = ccn_charbuf_create();
         ccn_charbuf_append_tt(sp.template_ccnb, CCN_DTAG_SignedInfo, CCN_DTAG);
@@ -148,13 +152,12 @@ enum ccn_upcall_res incoming_interest(struct ccn_closure *selfp,
         case CCN_UPCALL_FINAL:
             break;
         case CCN_UPCALL_INTEREST:
-            //check Interest name (ccnx:/name/prefix/ping/number)
             if (ping_interest_valid(server->prefix, info->interest_ccnb, info->pi)) {
-                //construct Data content with given Interest name
+                // Construct Data content with given Interest name.
                 struct ccn_charbuf *data = ccn_charbuf_create();
-                construct_ping_response(info->h, data, info->interest_ccnb, info->pi, server->expire);
+                construct_ping_response(info->h, data, info->interest_ccnb,
+                        info->pi, server->expire);
 
-                //send response back
                 res = ccn_put(info->h, data->buf, data->length);
                 ccn_charbuf_destroy(&data);
 
@@ -212,14 +215,15 @@ int main(int argc, char **argv)
     if (argv[1] != NULL)
         fprintf(stderr, "%s warning: extra arguments ignored\n", progname);
 
-    //append "/ping" to the given name prefix
+    // Append "/ping" to the given name prefix.
     res = ccn_name_append_str(server.prefix, PING_COMPONENT);
     if (res < 0) {
-        fprintf(stderr, "%s: error constructing ccn URI: %s/%s\n", progname, argv[0], PING_COMPONENT);
+        fprintf(stderr, "%s: error constructing ccn URI: %s/%s\n",
+                progname, argv[0], PING_COMPONENT);
         exit(1);
     }
 
-    /* Connect to ccnd */
+    // Connect to ccnd.
     ccn = ccn_create();
     if (ccn_connect(ccn, NULL) == -1) {
         perror("Could not connect to ccnd");
