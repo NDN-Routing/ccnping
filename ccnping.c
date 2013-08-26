@@ -19,17 +19,18 @@
  * Author: Cheng Yi <yic@email.arizona.edu>
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <string.h>
 #include <assert.h>
-#include <sys/time.h>
-#include <signal.h>
 #include <limits.h>
 #include <math.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
+
 #include <ccn/ccn.h>
 #include <ccn/uri.h>
 #include <ccn/schedule.h>
@@ -39,16 +40,19 @@
 #define PING_MIN_INTERVAL 0.1
 
 struct ccn_ping_client {
-    char *original_prefix;              //name prefix given by command line
-    char *identifier;                   //identifier is added to the Interest names before the numbers if not empty
-    struct ccn_charbuf *prefix;         //name prefix to ping
-    double interval;                    //interval between pings in seconds
-    int sent;                           //number of interest sent
-    int received;                       //number of content or timeout received
-    int total;                          //total number of pings to send
-    long int number;                    //the number used in ping Interest name, number < 0 means random
-    int print_timestamp;                //whether to print timestamp
-    int allow_caching;                  //whether caching is allowed by routers
+    char *original_prefix;              // Name prefix given by command line.
+    char *identifier;                   // Identifier added to the Interest names
+                                        // before the numbers.
+    struct ccn_charbuf *prefix;         // Name prefix to ping.
+    double interval;                    // Interval between pings in seconds.
+    int sent;                           // Number of interest sent.
+    int received;                       // Number of content or timeout received.
+    int total;                          // Total number of pings to send.
+    long int number;                    // The number used in ping Interest name,
+                                        // number < 0 means random.
+    int print_timestamp;                // Whether to print timestamp.
+    int allow_caching;                  // Whether routers are allowed to return
+                                        // ping Data from cache.
     struct ccn *h;
     struct ccn_schedule *sched;
     struct ccn_scheduled_event *event;
@@ -98,9 +102,12 @@ static void usage(const char *progname)
             "The numbers in the Interests are randomly generated unless specified.\n"
             "  [-i interval] - set ping interval in seconds (minimum %.2f second)\n"
             "  [-c count] - set total number of pings\n"
-            "  [-n number] - set the starting number, the number is increamented by 1 after each Interest\n"
-            "  [-p identifier] - add identifier to the Interest names before the numbers to avoid conflict\n"
-            "  [-a] - allow routers to return ping Data from cache (allowed by default if CCNx version < 0.8.0)\n"
+            "  [-n number] - set the starting number, the number is increamented by 1"
+            " after each Interest\n"
+            "  [-p identifier] - add identifier to the Interest names before the numbers"
+            " to avoid conflict\n"
+            "  [-a] - allow routers to return ping Data from cache (allowed by default if"
+            " CCNx version < 0.8.0)\n"
             "  [-t] - print timestamp\n"
             "  [-h] - print this message and exit\n",
             progname, PING_MIN_INTERVAL);
@@ -407,14 +414,15 @@ int main(int argc, char *argv[])
     if (argv[1] != NULL)
         fprintf(stderr, "%s warning: extra arguments ignored\n", progname);
 
-    //append "/ping" to the given name prefix
+    // Append "/ping" to the given name prefix.
     res = ccn_name_append_str(client.prefix, PING_COMPONENT);
     if (res < 0) {
-        fprintf(stderr, "%s: error constructing ccn URI: %s/%s\n", progname, argv[0], PING_COMPONENT);
+        fprintf(stderr, "%s: error constructing ccn URI: %s/%s\n",
+                progname, argv[0], PING_COMPONENT);
         exit(1);
     }
 
-    //append identifier if not empty
+    // Append identifier if not empty.
     if (client.identifier) {
         res = ccn_name_append_str(client.prefix, client.identifier);
         if (res < 0) {
@@ -424,7 +432,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* Connect to ccnd */
+    // Connect to ccnd.
     client.h = ccn_create();
     if (ccn_connect(client.h, NULL) == -1) {
         perror("Could not connect to ccnd");
@@ -443,7 +451,8 @@ int main(int argc, char *argv[])
 
     res = 0;
 
-    while (res >= 0 && (client.total <= 0 || client.sent < client.total || hashtb_n(client.ccn_ping_table) > 0))
+    while (res >= 0 && (client.total <= 0 || client.sent < client.total ||
+                hashtb_n(client.ccn_ping_table) > 0))
     {
         if (client.total <= 0 || client.sent < client.total)
             ccn_schedule_run(client.sched);
