@@ -89,7 +89,7 @@ static void usage(const char *progname)
 
 //check whether Interest name is valid
 //prefix is ccnx:/name/prefix/ping
-//Interest name should be ccnx:/name/prefix/ping/number
+//Interest name should be ccnx:/name/prefix/ping/number or ccnx:/name/prefix/ping/identifier/number
 //returns 1 if Interest name is valid, 0 otherwise
 int ping_interest_valid(struct ccn_charbuf *prefix,
         const unsigned char *interest_msg, const struct ccn_parsed_interest *pi)
@@ -103,9 +103,9 @@ int ping_interest_valid(struct ccn_charbuf *prefix,
     prefix_ncomps = ccn_name_split(prefix, prefix_components);
     ccn_indexbuf_destroy(&prefix_components);
 
-    if (pi->prefix_comps == prefix_ncomps + 1) {
+    if (pi->prefix_comps == prefix_ncomps + 1 || pi->prefix_comps == prefix_ncomps + 2) {
         number = strtol((char *)interest_msg + pi->offset[CCN_PI_B_LastPrefixComponent] + 2, &end, 10);
-        if (*end == '\0')
+        if (*end == '\0' && number >= 0)
             return 1;
     }
 
