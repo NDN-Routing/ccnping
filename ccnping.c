@@ -39,12 +39,14 @@
 
 struct ccn_ping_client {
     char *original_prefix;              //name prefix given by command line
+    char *identifier;                   //identifier is added to the Interest names before the numbers if not empty
     struct ccn_charbuf *prefix;         //name prefix to ping
     double interval;                    //interval between pings in seconds
     int sent;                           //number of interest sent
     int received;                       //number of content or timeout received
     int total;                          //total number of pings to send
     long int number;                    //the number used in ping Interest name, number < 0 means random
+    int print_timestamp;                //whether to print timestamp
     struct ccn *h;
     struct ccn_schedule *sched;
     struct ccn_scheduled_event *event;
@@ -95,6 +97,8 @@ static void usage(const char *progname)
             "  [-i interval] - set ping interval in seconds (minimum %.2f second)\n"
             "  [-c count] - set total number of pings\n"
             "  [-n number] - set the starting number, the number is increamented by 1 after each Interest\n"
+            "  [-p identifier] - add identifier to the Interest names before the numbers to avoid conflict\n"
+            "  [-t] - print timestamp\n"
             "  [-h] - print this message and exit\n",
             progname, PING_MIN_INTERVAL);
     exit(1);
@@ -154,7 +158,7 @@ static void add_ccn_ping_entry(struct ccn_ping_client *client,
 
     entry = e->data;
     entry->number = number;
-    gettimeofday(&entry->send_time, NULL);
+    gettimeofday(&entry->send_time, 0);
 
     hashtb_end(e);
 }
@@ -168,7 +172,7 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
     struct timeval now;
 
     assert(client->closure == selfp);
-    gettimeofday(&now, NULL);
+    gettimeofday(&now, 0);
 
     switch(kind) {
         case CCN_UPCALL_FINAL:
@@ -190,6 +194,8 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
             sta.tsum += rtt;
             sta.tsum2 += rtt * rtt;
 
+            if (client->print_timestamp)
+                printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
             printf("content from %s: number = %ld %2s\trtt = %.3f ms\n", client->original_prefix,
                     entry->number, "", rtt);
 
@@ -200,6 +206,8 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
             entry = get_ccn_ping_entry(client,
                     info->interest_ccnb, info->pi);
 
+            if (client->print_timestamp)
+                printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
             printf("timeout from %s: number = %ld\n", client->original_prefix, entry->number);
 
             remove_ccn_ping_entry(client, info->interest_ccnb, info->pi);
@@ -256,7 +264,7 @@ void print_statistics(void)
     if (sta.sent > 0) {
         double lost = (double)(sta.sent - sta.received) * 100 / sta.sent;
         struct timeval now = {0};
-        gettimeofday(&now, NULL);
+        gettimeofday(&now, 0);
         int time = (double)(now.tv_sec - sta.start.tv_sec) * 1000 +
             (double)(now.tv_usec - sta.start.tv_usec) / 1000;
 
@@ -277,10 +285,24 @@ void handle_interrupt(int sig_no)
     kill(0, SIGINT);
 }
 
+int is_valid_identifier(char *identifier) {
+    if (strlen(identifier) == 0)
+        return 0;
+
+    while (*identifier != '\0') {
+        if (*identifier < 'A' || (*identifier > 'Z' && *identifier < 'a') || *identifier > 'z')
+            return 0;
+        identifier ++;
+    }
+
+    return 1;
+}
+
 int main(int argc, char *argv[])
 {
     const char *progname = argv[0];
-    struct ccn_ping_client client = {.sent = 0, .received = 0, .total = -1, .number = -1, .interval = 1};
+    struct ccn_ping_client client = {.identifier = 0, .interval = 1, .sent = 0,
+        .received = 0, .total = -1, .number = -1, .print_timestamp = 0};
     struct ccn_closure in_content = {.p = &incoming_content};
     struct hashtb_param param = {0};
     int res;
@@ -294,7 +316,7 @@ int main(int argc, char *argv[])
     gettimeofday(&sta.start, 0);
     sta.min = INT_MAX;
 
-    while ((res = getopt(argc, argv, "hi:c:n:")) != -1) {
+    while ((res = getopt(argc, argv, "hti:c:n:p:")) != -1) {
         switch (res) {
             case 'c':
                 client.total = atol(optarg);
@@ -310,6 +332,14 @@ int main(int argc, char *argv[])
                 client.number = atol(optarg);
                 if (client.number < 0)
                     usage(progname);
+                break;
+            case 'p':
+                client.identifier = optarg;
+                if (!is_valid_identifier(client.identifier))
+                    usage(progname);
+                break;
+            case 't':
+                client.print_timestamp = 1;
                 break;
             case 'h':
             default:
@@ -346,6 +376,16 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    //append identifier if not empty
+    if (client.identifier) {
+        res = ccn_name_append_str(client.prefix, client.identifier);
+        if (res < 0) {
+            fprintf(stderr, "%s: error constructing ccn URI: %s/%s/%s\n",
+                    progname, argv[0], PING_COMPONENT, client.identifier);
+            exit(1);
+        }
+    }
+
     /* Connect to ccnd */
     client.h = ccn_create();
     if (ccn_connect(client.h, NULL) == -1) {
@@ -361,6 +401,9 @@ int main(int argc, char *argv[])
     client.sched = ccn_schedule_create(&client, &ccn_ping_ticker);
     client.event = ccn_schedule_event(client.sched, 0, &do_ping, NULL, 0);
 
+    if (client.print_timestamp) {
+        printf("%ld.%06u: ", (long)sta.start.tv_sec, (unsigned)sta.start.tv_usec);
+    }
     printf("CCNPING %s\n", client.original_prefix);
 
     res = 0;
