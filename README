@@ -38,6 +38,8 @@ The numbers in the Interests are randomly generated unless specified.
   [-i interval] - set ping interval in seconds (minimum 0.1 second)
   [-c count] - set total number of pings
   [-n number] - set the starting number, the number is increamented by 1 after each Interest
+  [-p identifier] - add identifier to the Interest names before the numbers to avoid conflict
+  [-t] - print timestamp
   [-h] - print this message and exit
 
 
