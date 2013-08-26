@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
     }
 
     if (client.number < 0)
-        srandom(time(NULL));
+        srandom(time(NULL)  * getpid());
 
     argc -= optind;
     argv += optind;
