@@ -99,7 +99,7 @@ static void usage(const char *progname)
             "  [-c count] - set total number of pings\n"
             "  [-n number] - set the starting number, the number is increamented by 1 after each Interest\n"
             "  [-p identifier] - add identifier to the Interest names before the numbers to avoid conflict\n"
-            "  [-a] - allow routers to cache ping Data\n"
+            "  [-a] - allow routers to return ping Data from cache\n"
             "  [-t] - print timestamp\n"
             "  [-h] - print this message and exit\n",
             progname, PING_MIN_INTERVAL);
