@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
@@ -165,6 +166,20 @@ static void add_ccn_ping_entry(struct ccn_ping_client *client,
     hashtb_end(e);
 }
 
+void print_log(int print_timestamp, const char *format, ...)
+{
+    if (print_timestamp) {
+        struct timeval now;
+        gettimeofday(&now, 0);
+        printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
+    }
+
+    va_list arglist;
+    va_start(arglist, format);
+    vprintf(format, arglist);
+    va_end(arglist);
+}
+
 static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
         enum ccn_upcall_kind kind, struct ccn_upcall_info* info)
 {
@@ -196,10 +211,8 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
             sta.tsum += rtt;
             sta.tsum2 += rtt * rtt;
 
-            if (client->print_timestamp)
-                printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
-            printf("content from %s: number = %ld %2s\trtt = %.3f ms\n", client->original_prefix,
-                    entry->number, "", rtt);
+            print_log(client->print_timestamp, "content from %s: number = %ld %2s\trtt = %.3f ms\n",
+                    client->original_prefix, entry->number, "", rtt);
 
             remove_ccn_ping_entry(client, info->interest_ccnb, info->pi);
 
@@ -208,9 +221,8 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
             entry = get_ccn_ping_entry(client,
                     info->interest_ccnb, info->pi);
 
-            if (client->print_timestamp)
-                printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
-            printf("timeout from %s: number = %ld\n", client->original_prefix, entry->number);
+            print_log(client->print_timestamp, "timeout from %s: number = %ld\n",
+                    client->original_prefix, entry->number);
 
             remove_ccn_ping_entry(client, info->interest_ccnb, info->pi);
 
@@ -272,14 +284,9 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
     ccn_charbuf_destroy(&templ);
     ccn_charbuf_destroy(&name);
 
-    if (res < 0) {
-        if (client->print_timestamp) {
-            struct timeval now;
-            gettimeofday(&now, 0);
-            printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
-        }
-        printf("failed to express Interest to %s: number = %ld\n", client->original_prefix, rnum);
-    }
+    if (res < 0)
+        print_log(client->print_timestamp, "failed to express Interest to %s: number = %ld\n",
+                client->original_prefix, rnum);
 
     return client->interval * 1000000;
 }
@@ -295,7 +302,8 @@ void print_statistics(void)
         int time = (double)(now.tv_sec - sta.start.tv_sec) * 1000 +
             (double)(now.tv_usec - sta.start.tv_usec) / 1000;
 
-        printf("%d Interests transmitted, %d Data received, %.1f%% packet loss, time %d ms\n", sta.sent, sta.received, lost, time);
+        printf("%d Interests transmitted, %d Data received, %.1f%% packet loss, time %d ms\n",
+                sta.sent, sta.received, lost, time);
     }
 
     if (sta.received > 0) {
@@ -431,10 +439,7 @@ int main(int argc, char *argv[])
     client.sched = ccn_schedule_create(&client, &ccn_ping_ticker);
     client.event = ccn_schedule_event(client.sched, 0, &do_ping, NULL, 0);
 
-    if (client.print_timestamp) {
-        printf("%ld.%06u: ", (long)sta.start.tv_sec, (unsigned)sta.start.tv_usec);
-    }
-    printf("CCNPING %s\n", client.original_prefix);
+    print_log(client.print_timestamp, "CCNPING %s\n", client.original_prefix);
 
     res = 0;
 
