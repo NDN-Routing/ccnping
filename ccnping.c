@@ -47,6 +47,7 @@ struct ccn_ping_client {
     int total;                          //total number of pings to send
     long int number;                    //the number used in ping Interest name, number < 0 means random
     int print_timestamp;                //whether to print timestamp
+    int allow_caching;                  //whether caching is allowed by routers
     struct ccn *h;
     struct ccn_schedule *sched;
     struct ccn_scheduled_event *event;
@@ -98,6 +99,7 @@ static void usage(const char *progname)
             "  [-c count] - set total number of pings\n"
             "  [-n number] - set the starting number, the number is increamented by 1 after each Interest\n"
             "  [-p identifier] - add identifier to the Interest names before the numbers to avoid conflict\n"
+            "  [-a] - allow routers to cache ping Data\n"
             "  [-t] - print timestamp\n"
             "  [-h] - print this message and exit\n",
             progname, PING_MIN_INTERVAL);
@@ -221,6 +223,22 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
     return CCN_UPCALL_RESULT_OK;
 }
 
+struct ccn_charbuf *make_template(int allow_caching) {
+    if (!allow_caching) {
+        struct ccn_charbuf *templ = ccn_charbuf_create();
+        ccn_charbuf_append_tt(templ, CCN_DTAG_Interest, CCN_DTAG);
+        ccn_charbuf_append_tt(templ, CCN_DTAG_Name, CCN_DTAG);
+        ccn_charbuf_append_closer(templ); /* </Name> */
+        ccn_charbuf_append_tt(templ, CCN_DTAG_AnswerOriginKind, CCN_DTAG);
+        ccnb_append_number(templ, CCN_AOK_NEW);
+        ccn_charbuf_append_closer(templ); /* </AnswerOriginKind> */
+        ccn_charbuf_append_closer(templ); /* </Interest> */
+        return(templ);
+    }
+
+    return NULL;
+}
+
 static int do_ping(struct ccn_schedule *sched, void *clienth,
         struct ccn_scheduled_event *ev, int flags)
 {
@@ -229,6 +247,7 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
         return 0;
 
     struct ccn_charbuf *name = ccn_charbuf_create();
+    struct ccn_charbuf *templ = NULL;
     long int rnum;
     char rnumstr[20];
     int res;
@@ -244,11 +263,13 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
     sprintf(rnumstr, "%ld", rnum);
     ccn_name_append_str(name, rnumstr);
 
-    res = ccn_express_interest(client->h, name, client->closure, NULL);
+    templ = make_template(client->allow_caching);
+    res = ccn_express_interest(client->h, name, client->closure, templ);
     add_ccn_ping_entry(client, name, rnum);
     client->sent ++;
     sta.sent ++;
 
+    ccn_charbuf_destroy(&templ);
     ccn_charbuf_destroy(&name);
 
     if (res >= 0)
@@ -302,7 +323,7 @@ int main(int argc, char *argv[])
 {
     const char *progname = argv[0];
     struct ccn_ping_client client = {.identifier = 0, .interval = 1, .sent = 0,
-        .received = 0, .total = -1, .number = -1, .print_timestamp = 0};
+        .received = 0, .total = -1, .number = -1, .print_timestamp = 0, .allow_caching = 0};
     struct ccn_closure in_content = {.p = &incoming_content};
     struct hashtb_param param = {0};
     int res;
@@ -316,7 +337,7 @@ int main(int argc, char *argv[])
     gettimeofday(&sta.start, 0);
     sta.min = INT_MAX;
 
-    while ((res = getopt(argc, argv, "hti:c:n:p:")) != -1) {
+    while ((res = getopt(argc, argv, "htai:c:n:p:")) != -1) {
         switch (res) {
             case 'c':
                 client.total = atol(optarg);
@@ -340,6 +361,9 @@ int main(int argc, char *argv[])
                 break;
             case 't':
                 client.print_timestamp = 1;
+                break;
+            case 'a':
+                client.allow_caching = 1;
                 break;
             case 'h':
             default:
