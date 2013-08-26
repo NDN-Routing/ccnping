@@ -76,7 +76,7 @@ struct ccn_ping_statistics sta;
 
 static void ccn_ping_gettime(const struct ccn_gettime *self, struct ccn_timeval *result)
 {
-    struct timeval now = {0};
+    struct timeval now;
     gettimeofday(&now, 0);
     result->s = now.tv_sec;
     result->micros = now.tv_usec;
@@ -99,7 +99,7 @@ static void usage(const char *progname)
             "  [-c count] - set total number of pings\n"
             "  [-n number] - set the starting number, the number is increamented by 1 after each Interest\n"
             "  [-p identifier] - add identifier to the Interest names before the numbers to avoid conflict\n"
-            "  [-a] - allow routers to return ping Data from cache\n"
+            "  [-a] - allow routers to return ping Data from cache (allowed by default if CCNx version < 0.8.0)\n"
             "  [-t] - print timestamp\n"
             "  [-h] - print this message and exit\n",
             progname, PING_MIN_INTERVAL);
@@ -224,7 +224,7 @@ static enum ccn_upcall_res incoming_content(struct ccn_closure* selfp,
 }
 
 struct ccn_charbuf *make_template(int allow_caching) {
-    if (!allow_caching) {
+    if (CCN_API_VERSION >= 8000 && !allow_caching) {
         struct ccn_charbuf *templ = ccn_charbuf_create();
         ccn_charbuf_append_tt(templ, CCN_DTAG_Interest, CCN_DTAG);
         ccn_charbuf_append_tt(templ, CCN_DTAG_Name, CCN_DTAG);
@@ -272,10 +272,16 @@ static int do_ping(struct ccn_schedule *sched, void *clienth,
     ccn_charbuf_destroy(&templ);
     ccn_charbuf_destroy(&name);
 
-    if (res >= 0)
-        return client->interval * 1000000;
-    else
-        return 0;
+    if (res < 0) {
+        if (client->print_timestamp) {
+            struct timeval now;
+            gettimeofday(&now, 0);
+            printf("%ld.%06u: ", (long)now.tv_sec, (unsigned)now.tv_usec);
+        }
+        printf("failed to express Interest to %s: number = %ld\n", client->original_prefix, rnum);
+    }
+
+    return client->interval * 1000000;
 }
 
 void print_statistics(void)
@@ -284,7 +290,7 @@ void print_statistics(void)
 
     if (sta.sent > 0) {
         double lost = (double)(sta.sent - sta.received) * 100 / sta.sent;
-        struct timeval now = {0};
+        struct timeval now;
         gettimeofday(&now, 0);
         int time = (double)(now.tv_sec - sta.start.tv_sec) * 1000 +
             (double)(now.tv_usec - sta.start.tv_usec) / 1000;
